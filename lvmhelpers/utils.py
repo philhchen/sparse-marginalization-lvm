@@ -34,7 +34,7 @@ def populate_common_params(
 
     # Marginalization
     arg_parser.add_argument("--normalizer", type=str, default="softmax",
-                            choices=["softmax", "sparsemax"],
+                            choices=["softmax", "sparsemax", "sparsesoftmax"],
                             help="""Normalizer to use when parameterizing
                             a discrete distribution over categories""")
 

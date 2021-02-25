@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from entmax import entmax15, sparsemax
+from .sparsesoftmax import sparse_softmax
 
 
 def entropy(p: torch.Tensor):
@@ -43,7 +44,8 @@ class ExplicitWrapper(nn.Module):
         normalizer_dict = {
             'softmax': torch.softmax,
             'sparsemax': sparsemax,
-            'entmax': entmax15}
+            'entmax': entmax15,
+            'sparsesoftmax': sparse_softmax}
         self.normalizer = normalizer_dict[normalizer]
 
     def forward(self, *args, **kwargs):
