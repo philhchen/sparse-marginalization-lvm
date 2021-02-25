@@ -4,7 +4,7 @@ import pytorch_lightning as pl
 from pytorch_lightning import loggers as pl_loggers
 
 import torch
-from torch.nn import CrossEntropyLoss
+from torch.nn import CrossEntropyLoss, LogSoftmax, NLLLoss
 
 from entmax import SparsemaxLoss, Entmax15Loss
 
@@ -24,6 +24,17 @@ from data import get_mnist_dataset_semisupervised, CycleConcatDataset
 from archs import MLPEncoder, MLPDecoder, Classifier, MNISTVAE
 from opts import populate_experiment_params
 
+
+class LogSparseSoftmax(torch.nn.Module):
+    def __init__(self, dim: int = -1):
+        self.dim = dim
+        self.log_softmax = LogSoftmax(dim)
+    
+    def forward(self, X):
+        mask = X < torch.mean(X, dim=self.dim)
+        log_probs = self.log_softmax(X - float("Inf") * mask)
+        log_probs += torch.finfo(X.dtype).eps * mask
+        return log_probs
 
 class SSVAE(pl.LightningModule):
     def __init__(
@@ -315,6 +326,8 @@ def get_supervised_loss(
         loss = Entmax15Loss(reduction='none')
     elif normalizer == 'sparsemax':
         loss = SparsemaxLoss(reduction='none')
+    elif normalizer == 'sparsesoftmax':
+        loss = torch.nn.Sequential([LogSparseSoftmax(), NLLLoss(reduction='none')])
     else:
         raise NameError("%s is not a valid normalizer!" % (normalizer, ))
     # get loss on a batch of labeled images
